@@ -15,17 +15,12 @@ def fetch_video_links(url):
         # Список для хранения видео ссылок  
         video_links = []  
 
-        # Поиск видео ссылок в <a> тегах  
+        # Поиск всех тегов <a> с href, которые могут содержать ссылки на видео  
         for link in soup.find_all('a', href=True):  
             href = link['href']  
             # Проверка на наличие видео-расширения  
             if re.search(r'\.(mp4|avi|mov|wmv|mkv|flv|webm)$', href, re.IGNORECASE):  
                 video_links.append(urljoin(url, href))  # Делаем абсолютную ссылку  
-
-        # Поиск видео в <video> тегах и их <source>  
-        for video in soup.find_all('video'):  
-            for source in video.find_all('source', src=True):  
-                video_links.append(urljoin(url, source['src']))  # Делаем абсолютную ссылку  
 
         return video_links  
 
@@ -34,8 +29,7 @@ def fetch_video_links(url):
         return []  
 
 def main():  
-    # Введи URL веб-сайта, с которого необходимо извлечь видео ссылки  
-    url = input("Введите URL (HTTPS): ")  
+    url = "https://rule34.xyz/playlists/view/30404"  
 
     # Получаем и выводим ссылки на видео  
     video_links = fetch_video_links(url)  
@@ -48,4 +42,4 @@ def main():
         print("Видео ссылки не найдены.")  
 
 if __name__ == "__main__":  
-    main()  
+    main()
