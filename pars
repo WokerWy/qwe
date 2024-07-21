@@ -3,37 +3,49 @@ from bs4 import BeautifulSoup
 import re  
 from urllib.parse import urljoin  
 
-# URL веб-сайта, с которого вы хотите извлечь видео ссылки  
-url = 'https://example.com'  # замените на нужный URL  
+def fetch_video_links(url):  
+    try:  
+        # Отправка GET-запроса к URL  
+        response = requests.get(url)  
+        response.raise_for_status()  # Проверка статуса ответа  
 
-# Загрузка веб-страницы  
-response = requests.get(url)  
-response.raise_for_status()  # Проверка успешности запроса  
+        # Парсинг контента страницы  
+        soup = BeautifulSoup(response.text, 'html.parser')  
 
-# Парсинг HTML-кода страницы  
-soup = BeautifulSoup(response.text, 'html.parser')  
+        # Список для хранения видео ссылок  
+        video_links = []  
 
-# Список для хранения найденных ссылок на видео  
-video_links = []  
+        # Поиск видео ссылок в <a> тегах  
+        for link in soup.find_all('a', href=True):  
+            href = link['href']  
+            # Проверка на наличие видео-расширения  
+            if re.search(r'\.(mp4|avi|mov|wmv|mkv|flv|webm)$', href, re.IGNORECASE):  
+                video_links.append(urljoin(url, href))  # Делаем абсолютную ссылку  
 
-# Поиск всех видео ссылок  
-# Проверяем в <a> тегах  
-for link in soup.find_all('a', href=True):  
-    href = link['href']  
-    # Проверка, соответствует ли ссылка формату видео  
-    if re.search(r'\.(mp4|avi|mov|wmv|mkv|flv)$', href, re.IGNORECASE):  
-        video_links.append(urljoin(url, href))  # делаем путь абсолютным  
+        # Поиск видео в <video> тегах и их <source>  
+        for video in soup.find_all('video'):  
+            for source in video.find_all('source', src=True):  
+                video_links.append(urljoin(url, source['src']))  # Делаем абсолютную ссылку  
 
-# Проверяем в <video> тегах  
-for video in soup.find_all('video'):  
-    source = video.find('source')  
-    if source and 'src' in source.attrs:  
-        video_links.append(urljoin(url, source['src']))  # делаем путь абсолютным  
+        return video_links  
 
-# Вывод всех найденных видео ссылок  
-if video_links:  
-    print("Найденные видео ссылки:")  
-    for i, video_link in enumerate(video_links, start=1):  
-        print(f"{i}. {video_link}")  
-else:  
-    print("Видео ссылки не найдены.")
+    except requests.RequestException as e:  
+        print(f"Ошибка при выполнении запроса: {e}")  
+        return []  
+
+def main():  
+    # Введи URL веб-сайта, с которого необходимо извлечь видео ссылки  
+    url = input("Введите URL (HTTPS): ")  
+
+    # Получаем и выводим ссылки на видео  
+    video_links = fetch_video_links(url)  
+
+    if video_links:  
+        print("Найденные видео ссылки:")  
+        for i, video_link in enumerate(video_links, start=1):  
+            print(f"{i}. {video_link}")  
+    else:  
+        print("Видео ссылки не найдены.")  
+
+if __name__ == "__main__":  
+    main()  
