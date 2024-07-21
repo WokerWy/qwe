@@ -1,18 +1,14 @@
 import requests  
 from bs4 import BeautifulSoup  
 import re  
+from urllib.parse import urljoin  
 
-# URL веб-сайта, с которого вы хотите извлечь ссылки на видео  
-url = 'https://rule34.xyz/playlists/view/30404'  
-
-# Заголовки для запроса  
-headers = {  
-    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'  
-}  
+# URL веб-сайта, с которого вы хотите извлечь видео ссылки  
+url = 'https://example.com'  # замените на нужный URL  
 
 # Загрузка веб-страницы  
-response = requests.get(url, headers=headers)  
-response.raise_for_status()  # Проверяет, была ли страница загружена успешно  
+response = requests.get(url)  
+response.raise_for_status()  # Проверка успешности запроса  
 
 # Парсинг HTML-кода страницы  
 soup = BeautifulSoup(response.text, 'html.parser')  
@@ -20,19 +16,24 @@ soup = BeautifulSoup(response.text, 'html.parser')
 # Список для хранения найденных ссылок на видео  
 video_links = []  
 
-# Поиск всех ссылок на видео (например, <video> теги и ссылки в <a> тегах)  
+# Поиск всех видео ссылок  
+# Проверяем в <a> тегах  
 for link in soup.find_all('a', href=True):  
     href = link['href']  
     # Проверка, соответствует ли ссылка формату видео  
-    if re.search(r'\.(mp4|avi|mov|wmv|mkv)$', href):  
-        video_links.append(href)  
+    if re.search(r'\.(mp4|avi|mov|wmv|mkv|flv)$', href, re.IGNORECASE):  
+        video_links.append(urljoin(url, href))  # делаем путь абсолютным  
 
-# Например, если видеопотоки хранятся в <video> тегах  
+# Проверяем в <video> тегах  
 for video in soup.find_all('video'):  
     source = video.find('source')  
     if source and 'src' in source.attrs:  
-        video_links.append(source['src'])  
+        video_links.append(urljoin(url, source['src']))  # делаем путь абсолютным  
 
 # Вывод всех найденных видео ссылок  
-for i, video_link in enumerate(video_links, start=1):  
-    print(f"{i}. {video_link}")
+if video_links:  
+    print("Найденные видео ссылки:")  
+    for i, video_link in enumerate(video_links, start=1):  
+        print(f"{i}. {video_link}")  
+else:  
+    print("Видео ссылки не найдены.")
