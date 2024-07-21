@@ -1,36 +1,56 @@
-import requests  
-from bs4 import BeautifulSoup  
+import os
+import requests
+from bs4 import BeautifulSoup
+from urllib.parse import urljoin
 
-def fetch_video_links(url):  
-    headers = {  
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'  
-    }  
-    response = requests.get(url, headers=headers)  
-    if response.status_code == 200:  
-        soup = BeautifulSoup(response.text, 'html.parser')  
-        video_links = []  
+# Укажите URL страницы, с которой нужно скачать видео
+url = "https://app.rule34.dev/hentai/0/score:%3E3+megumin+animated+"
 
-        # Ищем все элементы с ссылками на видео  
-        for link in soup.find_all('a', href=True):  
-            href = link['href']  
-            # Проверяем, что ссылка ведет на видео  
-            if 'video' in href:  # Замените это условие в зависимости от структуры ссылок  
-                video_links.append(href)  
+# Папка для сохранения видео
+output_dir = "videos"
+os.makedirs(output_dir, exist_ok=True)
 
-        return video_links  
-    else:  
-        print(f"Ошибка при получении страницы: {response.status_code}")  
-        return []  
+# Функция для скачивания видео по URL
+def download_video(video_url, output_dir):
+    local_filename = os.path.join(output_dir, video_url.split("/")[-1])
+    with requests.get(video_url, stream=True) as r:
+        r.raise_for_status()
+        with open(local_filename, "wb") as f:
+            for chunk in r.iter_content(chunk_size=8192):
+                f.write(chunk)
+    return local_filename
 
-def main():  
-    url = "https://rule34.xyz/playlists/view/30404"  
-    video_links = fetch_video_links(url)  
-    if video_links:  
-        print("Найденные видео ссылки:")  
-        for link in video_links:  
-            print(link)  
-    else:  
-        print("Видео ссылки не найдены.")  
+# Функция для парсинга страницы и извлечения видео URL
+def parse_videos(url):
+    response = requests.get(url)
+    response.raise_for_status()
 
-if __name__ == "__main__":  
-    main()
+    soup = BeautifulSoup(response.content, "html.parser")
+    video_urls = []
+
+    # Ищем все теги <video>
+    for video in soup.find_all("video"):
+        # Получаем URL видео из атрибута <source>
+        for source in video.find_all("source"):
+            video_url = source.get("src")
+            if video_url:
+                video_urls.append(urljoin(url, video_url))
+
+    # Ищем все ссылки на видеофайлы напрямую
+    for link in soup.find_all("a"):
+        href = link.get("href")
+        if href and (".mp4" in href or ".webm" in href):
+            video_urls.append(urljoin(url, href))
+
+    return video_urls
+
+# Получаем все видео URL со страницы
+video_urls = parse_videos(url)
+
+# Скачиваем все найденные видео
+for video_url in video_urls:
+    try:
+        print(f"Downloading {video_url}")
+        download_video(video_url, output_dir)
+    except Exception as e:
+        print(f"Failed to download {video_url}: {e}")
