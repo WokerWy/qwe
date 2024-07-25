@@ -1,0 +1,21 @@
+import yt_dlp
+
+
+def list_formats(url):
+    ydl_opts = {
+        'format': 'bestvideo+bestaudio/best',  # или 'best'
+        'noplaylist': True,
+    }
+
+    with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+        info_dict = ydl.extract_info(url, download=False)
+        formats = info_dict['formats']
+        for f in formats:
+            format_info = f"Формат: {f['format']}, Кодек: {f['ext']}"
+            if 'height' in f:  # Проверяем наличие ключа 'height'
+                format_info += f", Качество: {f['height']}p"
+            print(format_info)
+
+
+video_url = "https://youtu.be/_7DUCR-Hm_8?si=SU87A7AeO5Ag3fdN"
+list_formats(video_url)
