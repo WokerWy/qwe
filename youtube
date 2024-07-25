@@ -1,0 +1,30 @@
+import yt_dlp
+
+def download_youtube_video(url, quality, output_path='.'):
+    # Устанавливаем формат в зависимости от выбора качества
+    if quality == 'high':
+        format_option = 'bestvideo/best'  # Наилучшее качество видео
+    elif quality == 'medium':
+        format_option = 'bestvideo[height<=720]/best'  # Среднее качество (720p)
+    elif quality == 'low':
+        format_option = 'bestvideo[height<=480]/best'  # Низкое качество (480p)
+    else:
+        print("Неверный выбор качества. Используется наилучшее качество по умолчанию.")
+        format_option = 'bestvideo/best'
+
+    ydl_opts = {
+        'format': format_option,
+        'outtmpl': f'{output_path}/%(title)s.%(ext)s',
+        'noplaylist': True, 
+    }
+
+    with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+        print(f"Скачивание: {url} в качестве: {quality}")
+        ydl.download([url])
+        print("Скачивание завершено!")
+
+# Запрашиваем у пользователя URL видео и качество
+video_url = input("Введите URL видео: ")
+video_quality = input("Выберите качество (high, medium, low): ").lower()
+
+download_youtube_video(video_url, video_quality)
